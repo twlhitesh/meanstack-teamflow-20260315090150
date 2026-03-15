@@ -1,0 +1,20 @@
+<section class="hero">
+  <div class="hero-content">
+    <p class="eyebrow">Task Management Platform</p>
+    <h1>Build momentum with clear, collaborative execution.</h1>
+    <p class="lead">
+      TeamFlow gives your team one place to plan projects, prioritize work, and ship with confidence.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" routerLink="/projects" *ngIf="auth.isAuthenticated">Go to Dashboard</a>
+      <a class="btn btn-primary" routerLink="/auth" *ngIf="!auth.isAuthenticated">Get Started</a>
+      <a class="btn btn-secondary" routerLink="/tasks">Explore Tasks</a>
+    </div>
+  </div>
+  <div class="hero-panel">
+    <h3>Why teams choose TeamFlow</h3>
+    <ul>
+      <li *ngFor="let item of highlights">{{ item }}</li>
+    </ul>
+  </div>
+</section>

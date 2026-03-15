@@ -33,39 +33,6 @@ body {
   line-height: 1.5;
 }
 
-.navbar {
-  background: #333;
-  color: white;
-  padding: 15px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow);
-}
-
-.nav-brand {
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: -0.5px;
-}
-
-.nav-links a {
-  color: white;
-  text-decoration: none;
-  margin-left: 20px;
-  padding: 8px 15px;
-  border-radius: var(--radius-sm);
-  transition: var(--transition);
-}
-
-.nav-links a:hover {
-  background: #555;
-}
-
-.nav-links a.active {
-  background: var(--primary-color);
-}
-
 .container {
   max-width: 900px;
   margin: 0 auto;

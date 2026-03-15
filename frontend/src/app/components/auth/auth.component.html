@@ -1,0 +1,32 @@
+<section class="auth-wrap">
+  <div class="auth-card card">
+    <h1>{{ mode === 'login' ? 'Welcome back' : 'Create your account' }}</h1>
+    <p class="subtitle">
+      {{ mode === 'login' ? 'Sign in to continue managing your workspace.' : 'Start organizing your work in TeamFlow.' }}
+    </p>
+
+    <div class="mode-switch">
+      <button class="btn" [class.active]="mode === 'login'" (click)="toggleMode('login')">Login</button>
+      <button class="btn" [class.active]="mode === 'register'" (click)="toggleMode('register')">Register</button>
+    </div>
+
+    <div class="error-message" *ngIf="error">{{ error }}</div>
+
+    <form (ngSubmit)="submit()" *ngIf="mode === 'login'">
+      <input class="input full" type="email" placeholder="Email" [(ngModel)]="loginForm.email" name="loginEmail" required />
+      <input class="input full" type="password" placeholder="Password" [(ngModel)]="loginForm.password" name="loginPassword" required />
+      <button class="btn btn-primary full" type="submit" [disabled]="loading">
+        {{ loading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
+
+    <form (ngSubmit)="submit()" *ngIf="mode === 'register'">
+      <input class="input full" type="text" placeholder="Full name" [(ngModel)]="registerForm.name" name="registerName" required />
+      <input class="input full" type="email" placeholder="Email" [(ngModel)]="registerForm.email" name="registerEmail" required />
+      <input class="input full" type="password" placeholder="Password (min 6 chars)" [(ngModel)]="registerForm.password" name="registerPassword" minlength="6" required />
+      <button class="btn btn-primary full" type="submit" [disabled]="loading">
+        {{ loading ? 'Creating account...' : 'Create Account' }}
+      </button>
+    </form>
+  </div>
+</section>

@@ -1,8 +1,21 @@
 <nav class="navbar">
-  <div class="nav-brand">TeamFlow</div>
-  <div class="nav-links">
+  <a class="nav-brand" routerLink="/">
+    <span class="brand-mark">TF</span>
+    <span>TeamFlow</span>
+  </a>
+
+  <div class="nav-links" *ngIf="auth.isAuthenticated">
     <a routerLink="/projects" routerLinkActive="active">Projects</a>
     <a routerLink="/tasks" routerLinkActive="active">Tasks</a>
   </div>
+
+  <div class="nav-actions">
+    <span class="user-chip" *ngIf="auth.user">{{ auth.user.name }}</span>
+    <a class="btn btn-secondary btn-small" routerLink="/auth" *ngIf="!auth.isAuthenticated">Login</a>
+    <button class="btn btn-danger btn-small" (click)="logout()" *ngIf="auth.isAuthenticated">Logout</button>
+  </div>
 </nav>
-<router-outlet />
+
+<main class="page-shell">
+  <router-outlet />
+</main>

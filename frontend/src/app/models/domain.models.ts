@@ -32,3 +32,15 @@ export interface NewTaskPayload {
   dueDate: string;
   project: string;
 }
+
+export interface UserProfile {
+  _id: string;
+  name: string;
+  email: string;
+  createdAt: string;
+}
+
+export interface AuthPayload {
+  token: string;
+  user: UserProfile;
+}

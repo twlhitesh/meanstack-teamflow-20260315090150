@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { NewProjectPayload, Project, Task } from '../models/domain.models';
+import { AuthPayload, NewProjectPayload, Project, Task, UserProfile } from '../models/domain.models';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -22,6 +22,36 @@ export class ApiService {
   private handleError(error: any) {
     const message = error.error?.error || 'An error occurred';
     return throwError(() => new Error(message));
+  }
+
+  register(payload: { name: string; email: string; password: string }): Observable<AuthPayload> {
+    return this.http.post<ApiResponse<AuthPayload>>(`${this.apiUrl}/auth/register`, payload).pipe(
+      map(response => {
+        if (!response.data) throw new Error('Invalid register response');
+        return response.data;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  login(payload: { email: string; password: string }): Observable<AuthPayload> {
+    return this.http.post<ApiResponse<AuthPayload>>(`${this.apiUrl}/auth/login`, payload).pipe(
+      map(response => {
+        if (!response.data) throw new Error('Invalid login response');
+        return response.data;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  getMe(): Observable<UserProfile> {
+    return this.http.get<ApiResponse<UserProfile>>(`${this.apiUrl}/auth/me`).pipe(
+      map(response => {
+        if (!response.data) throw new Error('Invalid user profile response');
+        return response.data;
+      }),
+      catchError(this.handleError)
+    );
   }
 
   getProjects(): Observable<Project[]> {
