@@ -14,7 +14,17 @@
     {{ success }}
   </div>
 
-  <div class="form-section" *ngIf="showForm" @slideDown>
+  <div class="filters" *ngIf="projects.length > 0">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Search projects"
+      class="input"
+      [disabled]="loading || submitting"
+    />
+  </div>
+
+  <div class="form-section" *ngIf="showForm">
     <input
       type="text"
       [(ngModel)]="newProject.name"
@@ -42,7 +52,7 @@
   </div>
 
   <div class="projects-grid" *ngIf="!loading">
-    <div class="card project-card" *ngFor="let project of projects; let i = index" [style.animation-delay]="i * 0.05 + 's'">
+    <div class="card project-card" *ngFor="let project of filteredProjects; let i = index" [style.animation-delay]="i * 0.05 + 's'">
       <h3>{{ project.name }}</h3>
       <p>{{ project.description || 'No description' }}</p>
       <p class="meta">Created {{ project.createdAt | date:'mediumDate' }}</p>
@@ -55,6 +65,11 @@
         </button>
       </div>
     </div>
+  </div>
+
+  <div class="empty" *ngIf="!loading && filteredProjects.length === 0 && projects.length > 0">
+    <div class="empty-icon">🔎</div>
+    <p>No projects match your search.</p>
   </div>
 
   <div class="empty" *ngIf="!loading && projects.length === 0">

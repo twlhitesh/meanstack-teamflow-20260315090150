@@ -2,7 +2,7 @@
   <div class="header">
     <div class="header-left">
       <button class="btn btn-secondary btn-small" (click)="goBack()" *ngIf="filterProject">
-        ← Back
+        Back
       </button>
       <h1>Tasks</h1>
     </div>
@@ -19,33 +19,47 @@
     {{ success }}
   </div>
 
+  <div class="task-stats" *ngIf="tasks.length > 0">
+    <div class="stat-pill">To Do: {{ todoCount }}</div>
+    <div class="stat-pill">In Progress: {{ inProgressCount }}</div>
+    <div class="stat-pill">Done: {{ doneCount }}</div>
+  </div>
+
   <div class="filters">
-    <select [(ngModel)]="filterStatus" (change)="loadTasks()" class="select" [disabled]="loading">
+    <select [(ngModel)]="filterStatus" (change)="applyFilters()" class="select" [disabled]="loading">
       <option value="">All Status</option>
       <option value="todo">To Do</option>
       <option value="in-progress">In Progress</option>
       <option value="done">Done</option>
     </select>
-    <select [(ngModel)]="filterProject" (change)="loadTasks()" class="select" *ngIf="!filterProject" [disabled]="loading">
+    <select [(ngModel)]="filterProject" (change)="applyFilters()" class="select" [disabled]="loading">
       <option value="">All Projects</option>
       <option *ngFor="let p of projects" [value]="p._id">{{ p.name }}</option>
     </select>
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      class="input"
+      placeholder="Search tasks"
+      [disabled]="loading"
+    />
+    <button class="btn btn-secondary btn-small" (click)="loadTasks()" [disabled]="loading">Refresh</button>
   </div>
 
   <div class="form-section" *ngIf="showForm">
-    <input 
-      type="text" 
-      [(ngModel)]="newTask.title" 
-      placeholder="Task title *" 
-      class="input" 
+    <input
+      type="text"
+      [(ngModel)]="newTask.title"
+      placeholder="Task title *"
+      class="input"
       [disabled]="submitting"
       (keyup.enter)="createTask()"
     />
-    <input 
-      type="text" 
-      [(ngModel)]="newTask.description" 
-      placeholder="Description" 
-      class="input" 
+    <input
+      type="text"
+      [(ngModel)]="newTask.description"
+      placeholder="Description"
+      class="input"
       [disabled]="submitting"
       (keyup.enter)="createTask()"
     />
@@ -59,19 +73,19 @@
       <option value="medium">Medium Priority</option>
       <option value="high">High Priority</option>
     </select>
-    <input 
-      type="date" 
-      [(ngModel)]="newTask.dueDate" 
-      class="input" 
+    <input
+      type="date"
+      [(ngModel)]="newTask.dueDate"
+      class="input"
       [disabled]="submitting"
     />
-    <select [(ngModel)]="newTask.project" class="select" *ngIf="!filterProject" [disabled]="submitting">
+    <select [(ngModel)]="newTask.project" class="select" [disabled]="submitting">
       <option value="">Select Project</option>
       <option *ngFor="let p of projects" [value]="p._id">{{ p.name }}</option>
     </select>
-    <button 
-      class="btn btn-primary" 
-      (click)="createTask()" 
+    <button
+      class="btn btn-primary"
+      (click)="createTask()"
       [disabled]="submitting || !newTask.title.trim()"
     >
       <span class="spinner" *ngIf="submitting"></span>
@@ -84,9 +98,9 @@
   </div>
 
   <div class="tasks-list" *ngIf="!loading">
-    <div 
-      class="card task-card" 
-      *ngFor="let task of tasks; let i = index" 
+    <div
+      class="card task-card"
+      *ngFor="let task of filteredTasks; let i = index"
       [ngClass]="getStatusClass(task.status)"
       [style.animation-delay]="i * 0.05 + 's'"
     >
@@ -98,25 +112,26 @@
       </div>
       <p>{{ task.description || 'No description' }}</p>
       <div class="task-meta">
-        <span class="project-tag" *ngIf="task.project">{{ task.project.name }}</span>
+        <span class="project-tag" *ngIf="getProjectName(task)">{{ getProjectName(task) }}</span>
         <span class="status-tag" [ngClass]="getStatusClass(task.status)">
           {{ getStatusLabel(task.status) }}
         </span>
         <span class="due-date" *ngIf="task.dueDate">
-          📅 {{ task.dueDate | date:'mediumDate' }}
+          Due {{ task.dueDate | date:'mediumDate' }}
         </span>
+        <span class="overdue-tag" *ngIf="isOverdue(task)">Overdue</span>
       </div>
       <div class="task-actions">
-        <button 
-          class="btn btn-secondary btn-small" 
+        <button
+          class="btn btn-secondary btn-small"
           (click)="updateStatus(task)"
           [disabled]="submitting"
         >
-          {{ task.status === 'todo' ? '▶ Start' : task.status === 'in-progress' ? '✓ Complete' : '↺ Reset' }}
+          {{ task.status === 'todo' ? 'Start' : task.status === 'in-progress' ? 'Complete' : 'Reset' }}
         </button>
-        <select 
-          class="select" 
-          [value]="task.priority" 
+        <select
+          class="select"
+          [value]="task.priority"
           (change)="updatePriority(task, $any($event.target).value)"
           [disabled]="submitting"
         >
@@ -124,8 +139,8 @@
           <option value="medium">Medium</option>
           <option value="high">High</option>
         </select>
-        <button 
-          class="btn btn-danger btn-small" 
+        <button
+          class="btn btn-danger btn-small"
           (click)="deleteTask(task._id)"
           [disabled]="submitting"
         >
@@ -135,8 +150,13 @@
     </div>
   </div>
 
+  <div class="empty" *ngIf="!loading && filteredTasks.length === 0 && tasks.length > 0">
+    <div class="empty-icon">No results</div>
+    <p>No tasks match your search or filters.</p>
+  </div>
+
   <div class="empty" *ngIf="!loading && tasks.length === 0">
-    <div class="empty-icon">📋</div>
+    <div class="empty-icon">No tasks</div>
     <p *ngIf="filterStatus || filterProject">No tasks match your filters.</p>
     <p *ngIf="!filterStatus && !filterProject">No tasks yet. Create one to get started!</p>
   </div>

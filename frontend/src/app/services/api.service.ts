@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { NewProjectPayload, Project, Task } from '../models/domain.models';
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -23,16 +24,19 @@ export class ApiService {
     return throwError(() => new Error(message));
   }
 
-  getProjects(): Observable<any[]> {
-    return this.http.get<ApiResponse<any[]>>(`${this.apiUrl}/projects`).pipe(
+  getProjects(): Observable<Project[]> {
+    return this.http.get<ApiResponse<Project[]>>(`${this.apiUrl}/projects`).pipe(
       map(response => response.data || []),
       catchError(this.handleError)
     );
   }
 
-  createProject(project: any): Observable<any> {
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/projects`, project).pipe(
-      map(response => response.data),
+  createProject(project: NewProjectPayload): Observable<Project> {
+    return this.http.post<ApiResponse<Project>>(`${this.apiUrl}/projects`, project).pipe(
+      map(response => {
+        if (!response.data) throw new Error('Invalid create project response');
+        return response.data;
+      }),
       catchError(this.handleError)
     );
   }
@@ -44,24 +48,32 @@ export class ApiService {
     );
   }
 
-  getTasks(projectId?: string): Observable<any[]> {
-    const url = projectId ? `${this.apiUrl}/tasks?projectId=${projectId}` : `${this.apiUrl}/tasks`;
-    return this.http.get<ApiResponse<any[]>>(url).pipe(
+  getTasks(projectId?: string): Observable<Task[]> {
+    const url = projectId
+      ? `${this.apiUrl}/tasks?projectId=${encodeURIComponent(projectId)}`
+      : `${this.apiUrl}/tasks`;
+    return this.http.get<ApiResponse<Task[]>>(url).pipe(
       map(response => response.data || []),
       catchError(this.handleError)
     );
   }
 
-  createTask(task: any): Observable<any> {
-    return this.http.post<ApiResponse<any>>(`${this.apiUrl}/tasks`, task).pipe(
-      map(response => response.data),
+  createTask(task: Partial<Task>): Observable<Task> {
+    return this.http.post<ApiResponse<Task>>(`${this.apiUrl}/tasks`, task).pipe(
+      map(response => {
+        if (!response.data) throw new Error('Invalid create task response');
+        return response.data;
+      }),
       catchError(this.handleError)
     );
   }
 
-  updateTask(id: string, task: any): Observable<any> {
-    return this.http.put<ApiResponse<any>>(`${this.apiUrl}/tasks/${id}`, task).pipe(
-      map(response => response.data),
+  updateTask(id: string, task: Partial<Task>): Observable<Task> {
+    return this.http.put<ApiResponse<Task>>(`${this.apiUrl}/tasks/${id}`, task).pipe(
+      map(response => {
+        if (!response.data) throw new Error('Invalid update task response');
+        return response.data;
+      }),
       catchError(this.handleError)
     );
   }

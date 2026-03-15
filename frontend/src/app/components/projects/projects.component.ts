@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { NewProjectPayload, Project } from '../../models/domain.models';
 
 @Component({
   selector: 'app-projects',
@@ -12,8 +13,9 @@ import { ApiService } from '../../services/api.service';
   styleUrl: './projects.component.css'
 })
 export class ProjectsComponent implements OnInit {
-  projects: any[] = [];
-  newProject = { name: '', description: '' };
+  projects: Project[] = [];
+  newProject: NewProjectPayload = { name: '', description: '' };
+  searchTerm = '';
   showForm = false;
   loading = false;
   submitting = false;
@@ -43,6 +45,10 @@ export class ProjectsComponent implements OnInit {
 
   createProject() {
     if (!this.newProject.name.trim() || this.submitting) return;
+    if (this.newProject.name.trim().length < 3) {
+      this.error = 'Project name must be at least 3 characters long';
+      return;
+    }
     
     this.submitting = true;
     this.error = '';
@@ -65,6 +71,7 @@ export class ProjectsComponent implements OnInit {
 
   deleteProject(id: string) {
     if (this.submitting) return;
+    if (!confirm('Delete this project and all associated tasks?')) return;
     
     this.submitting = true;
     this.error = '';
@@ -85,6 +92,15 @@ export class ProjectsComponent implements OnInit {
 
   viewTasks(projectId: string) {
     this.router.navigate(['/tasks'], { queryParams: { projectId } });
+  }
+
+  get filteredProjects(): Project[] {
+    const keyword = this.searchTerm.trim().toLowerCase();
+    if (!keyword) return this.projects;
+    return this.projects.filter(project => {
+      return project.name.toLowerCase().includes(keyword)
+        || (project.description || '').toLowerCase().includes(keyword);
+    });
   }
 
   clearSuccess() {

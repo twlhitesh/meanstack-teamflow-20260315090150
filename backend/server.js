@@ -223,6 +223,16 @@ app.post('/api/tasks', async (req, res) => {
       return successResponse(res, responseTask, 201);
     }
 
+    if (req.body.project) {
+      if (!mongoose.Types.ObjectId.isValid(req.body.project)) {
+        return errorResponse(res, 400, 'Invalid project ID');
+      }
+      const existingProject = await Project.findById(req.body.project);
+      if (!existingProject) {
+        return errorResponse(res, 400, 'Project not found');
+      }
+    }
+
     const task = new Task(req.body);
     await task.save();
     const populatedTask = await Task.findById(task._id).populate('project');
@@ -275,6 +285,17 @@ app.put('/api/tasks/:id', async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return errorResponse(res, 400, 'Invalid task ID');
     }
+
+    if (req.body.project) {
+      if (!mongoose.Types.ObjectId.isValid(req.body.project)) {
+        return errorResponse(res, 400, 'Invalid project ID');
+      }
+      const existingProject = await Project.findById(req.body.project);
+      if (!existingProject) {
+        return errorResponse(res, 400, 'Project not found');
+      }
+    }
+
     const task = await Task.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).populate('project');
     if (!task) {
       return errorResponse(res, 404, 'Task not found');

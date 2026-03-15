@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
+import { NewTaskPayload, Project, Task, TaskPriority, TaskStatus } from '../../models/domain.models';
 
 @Component({
   selector: 'app-tasks',
@@ -12,12 +13,13 @@ import { ApiService } from '../../services/api.service';
   styleUrl: './tasks.component.css'
 })
 export class TasksComponent implements OnInit {
-  tasks: any[] = [];
-  projects: any[] = [];
-  newTask = { title: '', description: '', status: 'todo', priority: 'medium', dueDate: '', project: '' };
+  tasks: Task[] = [];
+  projects: Project[] = [];
+  newTask: NewTaskPayload = { title: '', description: '', status: 'todo', priority: 'medium', dueDate: '', project: '' };
   showForm = false;
   filterProject = '';
   filterStatus = '';
+  searchTerm = '';
   loading = false;
   submitting = false;
   error = '';
@@ -32,6 +34,7 @@ export class TasksComponent implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       this.filterProject = params['projectId'] || '';
+      this.filterStatus = params['status'] || '';
       this.newTask.project = this.filterProject;
       this.loadTasks();
     });
@@ -56,9 +59,7 @@ export class TasksComponent implements OnInit {
     
     this.api.getTasks(projectId).subscribe({
       next: (allTasks) => {
-        this.tasks = this.filterStatus 
-          ? allTasks.filter((t: any) => t.status === this.filterStatus) 
-          : allTasks;
+        this.tasks = allTasks;
         this.loading = false;
       },
       error: (err) => {
@@ -70,13 +71,18 @@ export class TasksComponent implements OnInit {
 
   createTask() {
     if (!this.newTask.title.trim() || this.submitting) return;
+    if (!this.newTask.project && !this.filterProject) {
+      this.error = 'Please select a project for this task';
+      return;
+    }
     
     this.submitting = true;
     this.error = '';
     
-    const taskData = {
+    const taskData: Partial<Task> = {
       ...this.newTask,
-      dueDate: this.newTask.dueDate || null
+      dueDate: this.newTask.dueDate || null,
+      project: this.newTask.project || this.filterProject
     };
     
     this.api.createTask(taskData).subscribe({
@@ -102,10 +108,10 @@ export class TasksComponent implements OnInit {
     });
   }
 
-  updateStatus(task: any) {
+  updateStatus(task: Task) {
     const statuses = ['todo', 'in-progress', 'done'];
     const currentIndex = statuses.indexOf(task.status);
-    const newStatus = statuses[(currentIndex + 1) % statuses.length];
+    const newStatus = statuses[(currentIndex + 1) % statuses.length] as TaskStatus;
     
     this.api.updateTask(task._id, { status: newStatus }).subscribe({
       next: (updatedTask) => {
@@ -117,10 +123,10 @@ export class TasksComponent implements OnInit {
     });
   }
 
-  updatePriority(task: any, priority: string) {
+  updatePriority(task: Task, priority: TaskPriority) {
     this.api.updateTask(task._id, { priority }).subscribe({
-      next: () => {
-        this.loadTasks();
+      next: (updatedTask) => {
+        task.priority = updatedTask.priority;
       },
       error: (err) => {
         this.error = err.message;
@@ -130,6 +136,7 @@ export class TasksComponent implements OnInit {
 
   deleteTask(id: string) {
     if (this.submitting) return;
+    if (!confirm('Delete this task?')) return;
     
     this.submitting = true;
     this.error = '';
@@ -156,6 +163,58 @@ export class TasksComponent implements OnInit {
     return `status-${status.replace('-', '')}`;
   }
 
+  applyFilters() {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        projectId: this.filterProject || null,
+        status: this.filterStatus || null
+      },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  get filteredTasks(): Task[] {
+    let list = [...this.tasks];
+
+    if (this.filterStatus) {
+      list = list.filter(task => task.status === this.filterStatus);
+    }
+
+    const keyword = this.searchTerm.trim().toLowerCase();
+    if (keyword) {
+      list = list.filter(task => {
+        const projectName = typeof task.project === 'object' && task.project ? task.project.name : '';
+        return task.title.toLowerCase().includes(keyword)
+          || (task.description || '').toLowerCase().includes(keyword)
+          || projectName.toLowerCase().includes(keyword);
+      });
+    }
+
+    return list;
+  }
+
+  get todoCount(): number {
+    return this.tasks.filter(task => task.status === 'todo').length;
+  }
+
+  get inProgressCount(): number {
+    return this.tasks.filter(task => task.status === 'in-progress').length;
+  }
+
+  get doneCount(): number {
+    return this.tasks.filter(task => task.status === 'done').length;
+  }
+
+  isOverdue(task: Task): boolean {
+    if (!task.dueDate || task.status === 'done') return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(task.dueDate);
+    due.setHours(0, 0, 0, 0);
+    return due < today;
+  }
+
   getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
       'todo': 'To Do',
@@ -163,6 +222,14 @@ export class TasksComponent implements OnInit {
       'done': 'Done'
     };
     return labels[status] || status;
+  }
+
+  getProjectName(task: Task): string {
+    if (!task.project) return '';
+    if (typeof task.project === 'string') {
+      return this.projects.find(project => project._id === task.project)?.name || '';
+    }
+    return task.project.name;
   }
 
   goBack() {
