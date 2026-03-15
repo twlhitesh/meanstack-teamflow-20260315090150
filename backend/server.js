@@ -5,17 +5,37 @@ require('dotenv').config();
 
 const app = express();
 
+const normalizeOrigin = (value) => {
+  const raw = (value || '').trim();
+  if (!raw) return '';
+  if (raw === '*') return '*';
+  try {
+    return new URL(raw).origin.toLowerCase();
+  } catch {
+    return raw.replace(/\/+$/, '').toLowerCase();
+  }
+};
+
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:4200')
   .split(',')
-  .map(origin => origin.trim())
+  .map(origin => normalizeOrigin(origin))
   .filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) {
       return callback(null, true);
     }
-    return callback(new Error('Not allowed by CORS'));
+
+    const normalizedRequestOrigin = normalizeOrigin(origin);
+    const isAllowed = allowedOrigins.includes('*') || allowedOrigins.includes(normalizedRequestOrigin);
+
+    if (isAllowed) {
+      return callback(null, true);
+    }
+
+    // Reject CORS without throwing an application error.
+    return callback(null, false);
   }
 }));
 app.use(express.json());
