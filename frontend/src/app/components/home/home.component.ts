@@ -17,5 +17,11 @@ export class HomeComponent {
     'Keep teams aligned with deadlines and ownership'
   ];
 
+  metrics = [
+    { label: 'Completion visibility', value: '100%' },
+    { label: 'Live progress stages', value: '3' },
+    { label: 'Minutes to onboard', value: '< 5' }
+  ];
+
   constructor(public auth: AuthService) {}
 }
