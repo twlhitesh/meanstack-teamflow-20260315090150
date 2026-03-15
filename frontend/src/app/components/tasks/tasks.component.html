@@ -1,0 +1,143 @@
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <button class="btn btn-secondary btn-small" (click)="goBack()" *ngIf="filterProject">
+        ← Back
+      </button>
+      <h1>Tasks</h1>
+    </div>
+    <button class="btn btn-primary" (click)="showForm = !showForm" [disabled]="submitting">
+      {{ showForm ? 'Cancel' : '+ New Task' }}
+    </button>
+  </div>
+
+  <div class="error-message" *ngIf="error" (click)="clearError()">
+    {{ error }}
+  </div>
+
+  <div class="toast toast-success" *ngIf="success">
+    {{ success }}
+  </div>
+
+  <div class="filters">
+    <select [(ngModel)]="filterStatus" (change)="loadTasks()" class="select" [disabled]="loading">
+      <option value="">All Status</option>
+      <option value="todo">To Do</option>
+      <option value="in-progress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+    <select [(ngModel)]="filterProject" (change)="loadTasks()" class="select" *ngIf="!filterProject" [disabled]="loading">
+      <option value="">All Projects</option>
+      <option *ngFor="let p of projects" [value]="p._id">{{ p.name }}</option>
+    </select>
+  </div>
+
+  <div class="form-section" *ngIf="showForm">
+    <input 
+      type="text" 
+      [(ngModel)]="newTask.title" 
+      placeholder="Task title *" 
+      class="input" 
+      [disabled]="submitting"
+      (keyup.enter)="createTask()"
+    />
+    <input 
+      type="text" 
+      [(ngModel)]="newTask.description" 
+      placeholder="Description" 
+      class="input" 
+      [disabled]="submitting"
+      (keyup.enter)="createTask()"
+    />
+    <select [(ngModel)]="newTask.status" class="select" [disabled]="submitting">
+      <option value="todo">To Do</option>
+      <option value="in-progress">In Progress</option>
+      <option value="done">Done</option>
+    </select>
+    <select [(ngModel)]="newTask.priority" class="select" [disabled]="submitting">
+      <option value="low">Low Priority</option>
+      <option value="medium">Medium Priority</option>
+      <option value="high">High Priority</option>
+    </select>
+    <input 
+      type="date" 
+      [(ngModel)]="newTask.dueDate" 
+      class="input" 
+      [disabled]="submitting"
+    />
+    <select [(ngModel)]="newTask.project" class="select" *ngIf="!filterProject" [disabled]="submitting">
+      <option value="">Select Project</option>
+      <option *ngFor="let p of projects" [value]="p._id">{{ p.name }}</option>
+    </select>
+    <button 
+      class="btn btn-primary" 
+      (click)="createTask()" 
+      [disabled]="submitting || !newTask.title.trim()"
+    >
+      <span class="spinner" *ngIf="submitting"></span>
+      {{ submitting ? 'Creating...' : 'Add Task' }}
+    </button>
+  </div>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <span class="spinner"></span>
+  </div>
+
+  <div class="tasks-list" *ngIf="!loading">
+    <div 
+      class="card task-card" 
+      *ngFor="let task of tasks; let i = index" 
+      [ngClass]="getStatusClass(task.status)"
+      [style.animation-delay]="i * 0.05 + 's'"
+    >
+      <div class="task-header">
+        <h3>{{ task.title }}</h3>
+        <span class="badge" [ngClass]="getPriorityClass(task.priority)">
+          {{ task.priority | titlecase }}
+        </span>
+      </div>
+      <p>{{ task.description || 'No description' }}</p>
+      <div class="task-meta">
+        <span class="project-tag" *ngIf="task.project">{{ task.project.name }}</span>
+        <span class="status-tag" [ngClass]="getStatusClass(task.status)">
+          {{ getStatusLabel(task.status) }}
+        </span>
+        <span class="due-date" *ngIf="task.dueDate">
+          📅 {{ task.dueDate | date:'mediumDate' }}
+        </span>
+      </div>
+      <div class="task-actions">
+        <button 
+          class="btn btn-secondary btn-small" 
+          (click)="updateStatus(task)"
+          [disabled]="submitting"
+        >
+          {{ task.status === 'todo' ? '▶ Start' : task.status === 'in-progress' ? '✓ Complete' : '↺ Reset' }}
+        </button>
+        <select 
+          class="select" 
+          [value]="task.priority" 
+          (change)="updatePriority(task, $any($event.target).value)"
+          [disabled]="submitting"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <button 
+          class="btn btn-danger btn-small" 
+          (click)="deleteTask(task._id)"
+          [disabled]="submitting"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty" *ngIf="!loading && tasks.length === 0">
+    <div class="empty-icon">📋</div>
+    <p *ngIf="filterStatus || filterProject">No tasks match your filters.</p>
+    <p *ngIf="!filterStatus && !filterProject">No tasks yet. Create one to get started!</p>
+  </div>
+</div>

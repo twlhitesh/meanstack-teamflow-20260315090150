@@ -1,0 +1,64 @@
+<div class="container">
+  <div class="header">
+    <h1>Projects</h1>
+    <button class="btn btn-primary" (click)="showForm = !showForm" [disabled]="submitting">
+      {{ showForm ? 'Cancel' : '+ New Project' }}
+    </button>
+  </div>
+
+  <div class="error-message" *ngIf="error" (click)="clearError()">
+    {{ error }}
+  </div>
+
+  <div class="toast toast-success" *ngIf="success">
+    {{ success }}
+  </div>
+
+  <div class="form-section" *ngIf="showForm" @slideDown>
+    <input
+      type="text"
+      [(ngModel)]="newProject.name"
+      placeholder="Project name *"
+      class="input"
+      [disabled]="submitting"
+      (keyup.enter)="createProject()"
+    />
+    <input
+      type="text"
+      [(ngModel)]="newProject.description"
+      placeholder="Description (optional)"
+      class="input"
+      [disabled]="submitting"
+      (keyup.enter)="createProject()"
+    />
+    <button class="btn btn-primary" (click)="createProject()" [disabled]="submitting || !newProject.name.trim()">
+      <span class="spinner" *ngIf="submitting"></span>
+      {{ submitting ? 'Creating...' : 'Create Project' }}
+    </button>
+  </div>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <span class="spinner"></span>
+  </div>
+
+  <div class="projects-grid" *ngIf="!loading">
+    <div class="card project-card" *ngFor="let project of projects; let i = index" [style.animation-delay]="i * 0.05 + 's'">
+      <h3>{{ project.name }}</h3>
+      <p>{{ project.description || 'No description' }}</p>
+      <p class="meta">Created {{ project.createdAt | date:'mediumDate' }}</p>
+      <div class="card-actions">
+        <button class="btn btn-secondary btn-small" (click)="viewTasks(project._id)" [disabled]="submitting">
+          View Tasks
+        </button>
+        <button class="btn btn-danger btn-small" (click)="deleteProject(project._id)" [disabled]="submitting">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty" *ngIf="!loading && projects.length === 0">
+    <div class="empty-icon">📁</div>
+    <p>No projects yet. Create one to get started!</p>
+  </div>
+</div>
